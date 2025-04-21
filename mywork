@@ -1,0 +1,20 @@
+pipeline {
+    agent any
+stages {
+        stage('git checkout') {
+            steps {
+                git credentialsId: 'satish', url: 'https://github.com/Ramandapke/finalproject.git'
+            }
+        }
+            stage('mvn build') {
+            steps {
+                sh 'mvn clean package'
+            }
+            }
+            stage('nexus upload') {
+            steps {
+               nexusArtifactUploader artifacts: [[artifactId: 'myweb', classifier: '', file: 'target/myweb-8.2.34.war', type: 'war']], credentialsId: 'nexus', groupId: 'in.javahome', nexusUrl: '172.31.0.169:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: '8.2.34'
+            }
+        }
+    }
+}
