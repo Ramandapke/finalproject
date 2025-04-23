@@ -3,18 +3,41 @@ pipeline {
 stages {
         stage('git checkout') {
             steps {
-                git credentialsId: 'satish', url: 'https://github.com/Ramandapke/finalproject.git'
+                 git credentialsId: 'git', url: 'https://github.com/Ramandapke/laxmisirrepo.git' 
             }
         }
             stage('mvn build') {
-            steps {
-                sh 'mvn clean package'
-            }
-            }
-            stage('nexus upload') {
-            steps {
-               nexusArtifactUploader artifacts: [[artifactId: 'myweb', classifier: '', file: 'target/myweb-8.2.34.war', type: 'war']], credentialsId: 'nexus', groupId: 'in.javahome', nexusUrl: '172.31.0.169:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-snapshots', version: '8.2.34'
+                steps {
+                  sh 'mvn clean package'
             }
         }
+            stage('nexus upload') {
+               steps {
+               nexusArtifactUploader artifacts: [[artifactId: 'myweb', classifier: '', file: 'target/myweb-8.2.34.war', type: 'war']], credentialsId: 'nexus', groupId: 'in.javahome', nexusUrl: '172.31.10.195:8081', nexusVersion: 'nexus3', protocol: 'http', repository: 'maven-releases', version: '8.2.34'
+            }
+        }
+        stage('Docker build') {
+                steps {
+                  sh '''
+                  docker build . -t mybuild:$BUILD_NUMBER
+                  '''
+            }
+        }
+        stage('Docker image upload') {
+                steps {
+                  sh '''
+                  docker tag mybuild:$BUILD_NUMBER raman6554/mybuild 
+                  docker push raman6554/mybuild
+                  '''
+            }
+        }
+       stage('kubernetes deployment') {
+                steps {
+                  sh '''
+                kubectl apply -f deployments.yml
+                  '''
+            }
+        }
+       
     }
 }
